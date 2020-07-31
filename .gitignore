@@ -1,0 +1,4 @@
+# Project exclude paths
+/async/target/
+/async2/target/
+/async-pst/target/
