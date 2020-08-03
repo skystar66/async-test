@@ -1,12 +1,12 @@
 package com.async.pst.service;
 
-import com.async.pst.worker2.ParWorker;
-import com.async.pst.worker2.ParWorker1;
-import com.async.pst.worker2.ParWorker2;
-import com.async.pst.worker2.ParWorker3;
-import com.jd.platform.async.executor.Async;
-import com.jd.platform.async.executor.timer.SystemClock;
-import com.jd.platform.async.wrapper.WorkerWrapper;
+import com.async.pst.woker.ParWorker;
+import com.async.pst.woker.ParWorker1;
+import com.async.pst.woker.ParWorker2;
+import com.async.pst.woker.ParWorker3;
+import com.xuliang.framework.async.excuter.Async;
+import com.xuliang.framework.async.excuter.timer.SystemClock;
+import com.xuliang.framework.async.wrapper.WorkerWrapper;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;

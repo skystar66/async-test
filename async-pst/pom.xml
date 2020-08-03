@@ -16,7 +16,7 @@
 
         <dependency>
             <groupId>com.xuliang.framework.test</groupId>
-            <artifactId>async2</artifactId>
+            <artifactId>async</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 

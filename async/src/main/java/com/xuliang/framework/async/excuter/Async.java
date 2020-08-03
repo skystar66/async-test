@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
 public class Async {
 
     public static final ThreadPoolExecutor COMMON_POOL =
-            new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, 1024,
+            new ThreadPoolExecutor(500, 2000,
                     15L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(),
+                    new LinkedBlockingQueue<>(3000),
                     (ThreadFactory) Thread::new);
 
 
@@ -86,9 +86,18 @@ public class Async {
     }
 
 
-
     public static void shutDown() {
         COMMON_POOL.shutdown();
+    }
+
+
+    /**
+     * 获取当前线程数量
+     */
+    public static String getThreadCount() {
+        return "activeCount=" + COMMON_POOL.getActiveCount() +
+                "  completedCount " + COMMON_POOL.getCompletedTaskCount() +
+                "  largestCount " + COMMON_POOL.getLargestPoolSize();
     }
 
 
