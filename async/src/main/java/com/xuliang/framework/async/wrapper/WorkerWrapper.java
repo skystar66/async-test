@@ -33,6 +33,9 @@ public class WorkerWrapper<T, V> {
 
     private T param;
 
+    /**任务名称*/
+    private String name;
+
     /**
      * 具体处理的worker
      */
@@ -101,12 +104,13 @@ public class WorkerWrapper<T, V> {
     private static final int INIT = 0;
 
 
-    public WorkerWrapper(String id, T param, IWorker<T, V> worker, ICallBack<T, V> callback) {
+    public WorkerWrapper(String id,String name, T param, IWorker<T, V> worker, ICallBack<T, V> callback) {
         if (worker == null) {
             throw new NullPointerException("async.worker is null");
         }
         this.id = id;
         this.param = param;
+        this.name=name;
         this.iWorker = worker;
         //允许不设置回调
         if (callback == null) {
@@ -136,26 +140,27 @@ public class WorkerWrapper<T, V> {
         long now = SystemClock.now();
         /**总的已经超时啦，就快速失败，进行下一个*/
         if (timeout <= 0) {
-            System.out.println("=== 快速失败 ===");
+            System.out.println("=== 超时，快速失败 ===");
             fastFail(INIT, null);
-            beginNext(threadPoolExecutor, now, timeout);
+            beginNextWorker(threadPoolExecutor, now, timeout);
             return;
         }
 
-        /**如果自己已经执行过了。
-         可能有多个依赖，其中的一个依赖已经执行完了，并且自己也已开始执行或执行完毕。当另一个依赖执行完毕，又进来该方法时，就不重复处理了*/
-        if (getState() == FINISH || getState() == ERROR) {
-            System.out.println(">>>>>>>> 当前任务状态等于完成或失败 : " + getState() + " <<<<<<<<");
-            beginNext(threadPoolExecutor, now, timeout);
-            return;
-        }
+        /**
+         * 如果自己已经执行过了。可能有多个依赖，其中的一个依赖已经执行完了，并且自己也已开始执行或执行完毕。
+         当另一个依赖执行完毕，又进来该方法时，就不重复处理了*/
+//        if (getState() == FINISH || getState() == ERROR) {
+//            System.out.println(">>>>>>>> 当前任务状态等于完成或失败 : " + getState() + " <<<<<<<<");
+//            beginNextWorker(threadPoolExecutor, now, timeout);
+//            return;
+//        }
         /**如果在执行前 需要校验一下nextWrapper的状态*/
         if (needCheckNextWrapperResult) {
-            /**如果练上已经有任务执行完成啦，自己就不用执行啦,执行下一个*/
+            /**如果链上已经有任务执行完成啦，自己就不用执行啦,执行下一个*/
             if (!checkNextWrapperResult()) {
                 System.out.println("=== 快速失败 ===");
                 fastFail(INIT, null);
-                beginNext(threadPoolExecutor, now, timeout);
+                beginNextWorker(threadPoolExecutor, now, timeout);
                 return;
             }
         }
@@ -163,8 +168,10 @@ public class WorkerWrapper<T, V> {
         /**如果没有任何依赖，说明自己就是第一批执行的*/
         if (dependWrappers == null || dependWrappers.size() == 0) {
             System.out.println("=== 没有任何依赖 继续执行 time:" + SystemClock.now() + " " + Thread.currentThread().getName() + " ===");
-            fire();
-            beginNext(threadPoolExecutor, now, timeout);
+            //执行当前worker，获取结果
+            execute();
+            //执行下一个任务
+            beginNextWorker(threadPoolExecutor, now, timeout);
             return;
         }
 
@@ -172,7 +179,7 @@ public class WorkerWrapper<T, V> {
          *  如果前方有依赖，存在两种情况：
          *  1,前面只有一个wrapper，即 A-> B
          *  2,前面有多个wrapper，即 A C D -> B ,需要A C D都完成啦才能轮到B。
-         *      但是无论是A执行完 还是C D 执行完 都回去唤醒B，
+         *      但是无论是A执行完 还是C D 执行完 都会去唤醒B，
          *      所以需要B来做判断，必须B来判断，必须是ACD全部执行完，自己才能执行
          *
          * */
@@ -181,9 +188,9 @@ public class WorkerWrapper<T, V> {
             /**有一个依赖时*/
             doDependsOneJob(fromWrapper);
             /**前面的任务正常执行完毕，执行自己的任务*/
-            fire();
+            execute();
             /**执行下一个任务*/
-            beginNext(threadPoolExecutor, now, timeout);
+            beginNextWorker(threadPoolExecutor, now, timeout);
         } else {
             /**有多个依赖时*/
             doDependsJobs(threadPoolExecutor, dependWrappers, fromWrapper, now, timeout);
@@ -207,7 +214,7 @@ public class WorkerWrapper<T, V> {
      * 执行自己的job.具体的执行是在另一个线程里
      * 但判断阻塞超时是在work线程
      */
-    private void fire() {
+    private void execute() {
         //阻塞取结果
         System.out.println("=== time:" + SystemClock.now() + " 阻塞取结果 " + Thread.currentThread().getName() + " ===");
         workResult = workerDoJob();
@@ -264,11 +271,11 @@ public class WorkerWrapper<T, V> {
      * @param threadPoolExecutor 线程池
      * @param timeout            超时时间
      */
-    private void beginNext(ThreadPoolExecutor threadPoolExecutor, long now, long timeout) {
+    private void beginNextWorker(ThreadPoolExecutor threadPoolExecutor, long now, long timeout) {
         System.out.println("=== time:" + SystemClock.now() + " 进行下一个任务 " + Thread.currentThread().getName() + " ===");
         /**耗时时间*/
         long costtime = SystemClock.now() - now;
-        System.out.println("===  time:" + SystemClock.now() + " 耗时 costtime: " + costtime + " ms , timeout:"
+        System.out.println("===  time:" + SystemClock.now() + " 当前任务名称:"+name+", 耗时 costtime: " + costtime + " ms , 当前剩余 timeout:"
                 + (timeout - costtime) + " ms");
         if (nextWrappers == null) {
             return;
@@ -279,7 +286,7 @@ public class WorkerWrapper<T, V> {
                     timeout - costtime, forParamUseWrappers);
             return;
         }
-        /**当调用链有多个时，进行并发执行*/
+        /**当调用链有多个时，进行多线程并发执行*/
         CompletableFuture[] futures = new CompletableFuture[nextWrappers.size()];
         for (int i = 0; i < nextWrappers.size(); i++) {
             int finalI = i;
@@ -366,10 +373,10 @@ public class WorkerWrapper<T, V> {
                 fastFail(INIT, null);
             } else {
                 System.out.println("=== 非必须依赖条件 ，只执行自己 ===");
-                fire();
+                execute();
             }
             /**执行下一个*/
-            beginNext(threadPoolExecutor, now, timeout);
+            beginNextWorker(threadPoolExecutor, now, timeout);
             return;
         }
 
@@ -409,13 +416,13 @@ public class WorkerWrapper<T, V> {
         /**校验是否有失败的任务*/
         if (hasError) {
             fastFail(INIT, null);
-            beginNext(threadPoolExecutor, now, timeout);
+            beginNextWorker(threadPoolExecutor, now, timeout);
             return;
         }
         /**如果上游都没有失败，都已经全部完成，处理自己的任务*/
         if (!existNoFinish) {
-            fire();
-            beginNext(threadPoolExecutor, now, timeout);
+            execute();
+            beginNextWorker(threadPoolExecutor, now, timeout);
         }
     }
 
@@ -529,6 +536,7 @@ public class WorkerWrapper<T, V> {
      */
     public void stopNow() {
         if (getState() == INIT || getState() == WORKING) {
+            System.err.println("=== stop 当前任务 workerName："+name+" 状态："+getState()+" ===");
             fastFail(getState(), null);
         }
     }
@@ -540,6 +548,14 @@ public class WorkerWrapper<T, V> {
 
     public void setParam(T param) {
         this.param = param;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     /**
@@ -556,6 +572,9 @@ public class WorkerWrapper<T, V> {
          * worker的param
          */
         private W param;
+
+        /**worker上的name*/
+        private String name;
 
         /**
          * 具体要执行的worker
@@ -597,6 +616,12 @@ public class WorkerWrapper<T, V> {
         public Builder<W, C> id(String id) {
             if (id != null) {
                 this.id = id;
+            }
+            return this;
+        }
+        public Builder<W, C> name(String name) {
+            if (name != null) {
+                this.name = name;
             }
             return this;
         }
@@ -682,7 +707,7 @@ public class WorkerWrapper<T, V> {
         }
 
         public WorkerWrapper<W, C> build() {
-            WorkerWrapper<W, C> wrapper = new WorkerWrapper<>(id, param, worker, callback);
+            WorkerWrapper<W, C> wrapper = new WorkerWrapper<>(id,name, param, worker, callback);
             wrapper.setNeedCheckNextWrapperResult(needCheckNextWrapperResult);
             if (dependWrappers != null) {
                 for (DependWrapper dependWrapper : dependWrappers) {

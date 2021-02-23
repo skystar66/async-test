@@ -37,10 +37,10 @@ public class ParWorker3 implements IWorker<String, String>, ICallBack<String, St
     public void call(boolean success, String param, WorkResult<String> workResult) {
         if (success) {
             System.out.println("callback worker3 success--" + workResult.getResult()
-                    + "-threadName:" + Thread.currentThread().getName());
+                    + "-threadName:" + Thread.currentThread().getName()+"-param:"+param);
         } else {
             System.err.println("callback worker3 failure--" + workResult.getResult() + "-- ex " + workResult.getEx()
-                    + "-threadName:" + Thread.currentThread().getName());
+                    + "-threadName:" + Thread.currentThread().getName()+"-param:"+param);
         }
     }
 

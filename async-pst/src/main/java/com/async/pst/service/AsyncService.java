@@ -15,7 +15,16 @@ import java.util.concurrent.ExecutionException;
 public class AsyncService {
 
 
+
+
     public String result() throws ExecutionException, InterruptedException {
+
+        /**任务执行策略：
+         *    1
+         * 0      3
+         *    2
+         * */
+
 
         ParWorker parWorker0 = new ParWorker();
         ParWorker1 parWorker1 = new ParWorker1();
@@ -28,6 +37,7 @@ public class AsyncService {
                 .callback(parWorker3)
                 .worker(parWorker3)
                 .param("3")
+                .name("wrapper3-worker")
                 .build();
 
 
@@ -36,6 +46,7 @@ public class AsyncService {
                 .worker(parWorker1)
                 .param("1")
                 .next(wrapper3)
+                .name("wrapper1-worker")
                 .build();
 
         WorkerWrapper<String, String> wrapper2 = new WorkerWrapper.Builder<String, String>()
@@ -43,6 +54,7 @@ public class AsyncService {
                 .worker(parWorker2)
                 .param("2")
                 .next(wrapper3)
+                .name("wrapper2-worker")
                 .build();
 
 
@@ -51,6 +63,7 @@ public class AsyncService {
                 .worker(parWorker0)
                 .param("0")
                 .next(wrapper1, wrapper2)
+                .name("wrapper0-worker")
                 .build();
 
 

@@ -4,6 +4,9 @@
     <file url="file://$PROJECT_DIR$" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/async" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/async-pst" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/async-pst/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/async/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/async2" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/async2/src/main/java" charset="UTF-8" />
   </component>
 </project>

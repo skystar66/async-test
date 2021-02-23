@@ -61,6 +61,7 @@ public class Async {
         } catch (TimeoutException e) {
             Set<WorkerWrapper> set = new HashSet<>();
             totalWorkers(workerWrappers, set);
+            System.err.println("=== 总控制台超时，停止所有任务初始化/正在执行中的任务，当前任务数："+set.size()+" ===");
             for (WorkerWrapper wrapper : set) {
                 wrapper.stopNow();
             }

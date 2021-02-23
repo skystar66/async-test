@@ -29,10 +29,10 @@ public class ParWorker1 implements IWorker<String, String>, ICallBack<String, St
     public void call(boolean success, String param, WorkResult<String> workResult) {
         if (success) {
             System.out.println("callback worker1 success--" + workResult.getResult()
-                    + "-threadName:" + Thread.currentThread().getName());
+                    + "-threadName:" + Thread.currentThread().getName()+"-param:"+param);
         } else {
             System.err.println("callback worker1 failure--" + workResult.getResult() + "-- ex " + workResult.getEx()
-                    + "-threadName:" + Thread.currentThread().getName());
+                    + "-threadName:" + Thread.currentThread().getName()+"-param:"+param);
         }
     }
 
