@@ -15,6 +15,15 @@ import java.util.concurrent.ExecutionException;
 public class AsyncService {
 
 
+    public static void main(String[] args) {
+        try {
+            new AsyncService().result();
+
+        } catch (Exception e) {
+            {
+            }
+        }
+    }
 
 
     public String result() throws ExecutionException, InterruptedException {

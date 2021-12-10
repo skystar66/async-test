@@ -33,7 +33,9 @@ public class WorkerWrapper<T, V> {
 
     private T param;
 
-    /**任务名称*/
+    /**
+     * 任务名称
+     */
     private String name;
 
     /**
@@ -104,13 +106,13 @@ public class WorkerWrapper<T, V> {
     private static final int INIT = 0;
 
 
-    public WorkerWrapper(String id,String name, T param, IWorker<T, V> worker, ICallBack<T, V> callback) {
+    public WorkerWrapper(String id, String name, T param, IWorker<T, V> worker, ICallBack<T, V> callback) {
         if (worker == null) {
             throw new NullPointerException("async.worker is null");
         }
         this.id = id;
         this.param = param;
-        this.name=name;
+        this.name = name;
         this.iWorker = worker;
         //允许不设置回调
         if (callback == null) {
@@ -130,15 +132,25 @@ public class WorkerWrapper<T, V> {
 
     }
 
+
     /**
-     * 框架开始工作
-     */
+     * 开始执行work
+     *
+     * @param threadPoolExecutor
+     * @param fromWrapper         上游wrapper
+     * @param timeout
+     * @param forParamUseWrappers wrapper集合
+     * @return: void
+     * @author: xl
+     * @date: 2021/11/27
+     **/
     public void work(ThreadPoolExecutor threadPoolExecutor, WorkerWrapper fromWrapper,
                      long timeout, Map<String, WorkerWrapper> forParamUseWrappers) {
         this.forParamUseWrappers = forParamUseWrappers;
+        /**存储当前任务*/
         forParamUseWrappers.put(id, this);
         long now = SystemClock.now();
-        /**总的已经超时啦，就快速失败，进行下一个*/
+        /**work调用链已经超时啦，就快速失败，进行下一个*/
         if (timeout <= 0) {
             System.out.println("=== 超时，快速失败 ===");
             fastFail(INIT, null);
@@ -207,7 +219,7 @@ public class WorkerWrapper<T, V> {
         WorkerWrapper nextWrapper = nextWrappers.get(0);
         boolean state = nextWrapper.getState() == INIT;
         /**继续校验下一个调用链的状态*/
-        return state && nextWrapper.checkIsNullResult();
+        return state && nextWrapper.checkNextWrapperResult();
     }
 
     /**
@@ -272,11 +284,8 @@ public class WorkerWrapper<T, V> {
      * @param timeout            超时时间
      */
     private void beginNextWorker(ThreadPoolExecutor threadPoolExecutor, long now, long timeout) {
-        System.out.println("=== time:" + SystemClock.now() + " 进行下一个任务 " + Thread.currentThread().getName() + " ===");
         /**耗时时间*/
         long costtime = SystemClock.now() - now;
-        System.out.println("===  time:" + SystemClock.now() + " 当前任务名称:"+name+", 耗时 costtime: " + costtime + " ms , 当前剩余 timeout:"
-                + (timeout - costtime) + " ms");
         if (nextWrappers == null) {
             return;
         }
@@ -536,7 +545,7 @@ public class WorkerWrapper<T, V> {
      */
     public void stopNow() {
         if (getState() == INIT || getState() == WORKING) {
-            System.err.println("=== stop 当前任务 workerName："+name+" 状态："+getState()+" ===");
+            System.err.println("=== stop 当前任务 workerName：" + name + " 状态：" + getState() + " ===");
             fastFail(getState(), null);
         }
     }
@@ -573,7 +582,9 @@ public class WorkerWrapper<T, V> {
          */
         private W param;
 
-        /**worker上的name*/
+        /**
+         * worker上的name
+         */
         private String name;
 
         /**
@@ -619,6 +630,7 @@ public class WorkerWrapper<T, V> {
             }
             return this;
         }
+
         public Builder<W, C> name(String name) {
             if (name != null) {
                 this.name = name;
@@ -707,7 +719,7 @@ public class WorkerWrapper<T, V> {
         }
 
         public WorkerWrapper<W, C> build() {
-            WorkerWrapper<W, C> wrapper = new WorkerWrapper<>(id,name, param, worker, callback);
+            WorkerWrapper<W, C> wrapper = new WorkerWrapper<>(id, name, param, worker, callback);
             wrapper.setNeedCheckNextWrapperResult(needCheckNextWrapperResult);
             if (dependWrappers != null) {
                 for (DependWrapper dependWrapper : dependWrappers) {
