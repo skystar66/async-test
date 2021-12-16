@@ -389,13 +389,13 @@ public class WorkerWrapper<T, V> {
             return;
         }
 
-        /**todo 如果存在需要必须完成的，且 fromWrapper 不是必须的，就什么都不做*/
+        /**校验上游是否是我的必须依赖项，不是的话，就return，是的话，继续向下判断，上有服务状态是否执行完成。*/
         if (!nowDepandIsMust) {
             return;
         }
 
-        /**如果fromwrapper 是必须依赖项*/
-        boolean existNoFinish = false;
+        /**如果 fromwrapper 是必须依赖项*/
+        boolean isFinish = true;
         boolean hasError = false;
 
         /**判断所依赖项的执行结果状态，如果失败，不走自己的action，直接break*/
@@ -406,7 +406,7 @@ public class WorkerWrapper<T, V> {
              * 他会等待最后一个任务执行完成走进来，是一个一致性操作。
              * */
             if (workerWrapper.getState() == INIT || workerWrapper.getState() == WORKING) {
-                existNoFinish = true;
+                isFinish = false;
                 break;
             }
             /**校验任务执行结果状态*/
@@ -429,7 +429,7 @@ public class WorkerWrapper<T, V> {
             return;
         }
         /**如果上游都没有失败，都已经全部完成，处理自己的任务*/
-        if (!existNoFinish) {
+        if (isFinish) {
             execute();
             beginNextWorker(threadPoolExecutor, now, timeout);
         }
